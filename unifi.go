@@ -171,6 +171,7 @@ type command struct {
 	Mac     string `json:"mac"`
 	Cmd     string `json:"cmd"`
 	Minutes int    `json:"minutes,omitempty"`
+	//APMAC   string `json:"ap_mac"`
 }
 
 func (u *Unifi) devcmd(mac, cmd string) error {
@@ -191,7 +192,8 @@ func (u *Unifi) maccmd(mgr string, args interface{}) error {
 		return err
 	}
 	val := url.Values{"json": {string(param)}}
-	_, err = u.client.PostForm(u.apiURL+"cmd/"+mgr, val)
+	_, err = u.client.PostForm(u.apiURL+"s/default/cmd/"+mgr, val)
+	//_, err = u.client.PostForm(u.apiURL+"cmd/"+mgr, val)
 	return err
 }
 

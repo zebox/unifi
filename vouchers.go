@@ -17,6 +17,7 @@ type VoucherMap map[string]Voucher
 
 type Voucher struct {
 	u            *Unifi
+	ID           string `json:"_id"`
 	AdminName    string `json:"admin_name"`
 	Code         string
 	CreateTime   int `json:"create_time"`
@@ -37,6 +38,11 @@ type NewVoucher struct {
 	N            string `json:"n"`
 	Note         string `json:"note"`
 	Quota        string `json:"quota"`
+}
+
+type RevokeVoucher struct {
+	ID  string `json:"_id"`
+	Cmd string `json:"cmd"`
 }
 
 //Value with parameters for create New Voucher
@@ -79,6 +85,48 @@ func (u *Unifi) NewVoucher(site *Site, nv NewVoucher) ([]Voucher, error) {
 	err := u.parseNewVoucher(site, "cmd/hotspot", &response)
 	return response.Data, err
 
+}
+
+func (u *Unifi) RevokeVoucher(site *Site, id string) (interface{}, error) {
+	var response struct {
+		Data []interface{}
+		Meta meta
+	}
+	b, err := u.apicmdRevokeVoucher(site, "cmd/hotspot", id)
+	if err := json.Unmarshal(b, &response); err != nil {
+		return nil, err
+	}
+	return response, err
+}
+
+func (u *Unifi) apicmdRevokeVoucher(site *Site, cmd, id string) ([]byte, error) {
+
+	revoke := RevokeVoucher{
+		ID:  id,
+		Cmd: "delete-voucher",
+	}
+
+	cmdurl := u.apiURL
+	cmdurl += fmt.Sprintf("s/%s/%s", site.Name, cmd)
+	data, err := json.Marshal(revoke)
+	if err != nil {
+		return nil, err
+	}
+	val := url.Values{"json": {string(data)}}
+	resp, err := u.client.PostForm(cmdurl, val)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
 
 func (u *Unifi) apicmdNewVoucher(site *Site, cmd string) ([]byte, error) {
